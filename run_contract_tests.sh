@@ -10,6 +10,8 @@ PROJECT_GROUP="${PROJECT_GROUP:-group}"
 PROJECT_NAME="${PROJECT_NAME:-application}"
 PROJECT_VERSION="${PROJECT_VERSION:-0.0.1-SNAPSHOT}"
 
+# fixture setup
+
 gunicorn -w 4 main:app &
 APP_PID=$!
 
