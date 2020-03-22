@@ -1,0 +1,37 @@
+#!/bin/bash
+
+CURRENT_DIR="$( pwd )"
+
+SC_CONTRACT_DOCKER_VERSION="${SC_CONTRACT_DOCKER_VERSION:-2.2.0.RELEASE}"
+APP_IP="$( ./whats_my_ip.sh )"
+APP_PORT="${APP_PORT:-8000}"
+APPLICATION_BASE_URL="http://${APP_IP}:${APP_PORT}"
+PROJECT_GROUP="${PROJECT_GROUP:-group}"
+PROJECT_NAME="${PROJECT_NAME:-application}"
+PROJECT_VERSION="${PROJECT_VERSION:-0.0.1-SNAPSHOT}"
+
+gunicorn -w 4 main:app &
+APP_PID=$!
+
+echo "SC Contract Version [${SC_CONTRACT_DOCKER_VERSION}]"
+echo "Application URL [${APPLICATION_BASE_URL}]"
+echo "Project Version [${PROJECT_VERSION}]"
+
+docker run  --rm \
+--name verifier \
+-e "PUBLISH_STUBS_TO_SCM=false" \
+-e "PUBLISH_ARTIFACTS=false" \
+-e "APPLICATION_BASE_URL=${APPLICATION_BASE_URL}" \
+-e "PROJECT_NAME=${PROJECT_NAME}" \
+-e "PROJECT_GROUP=${PROJECT_GROUP}" \
+-e "PROJECT_VERSION=${PROJECT_VERSION}" \
+-e "EXTERNAL_CONTRACTS_REPO_WITH_BINARIES_URL=git://https://github.com/TYsewyn/cdct_python_contracts.git" \
+-e "EXTERNAL_CONTRACTS_ARTIFACT_ID=${PROJECT_NAME}" \
+-e "EXTERNAL_CONTRACTS_GROUP_ID=${PROJECT_GROUP}" \
+-e "EXTERNAL_CONTRACTS_VERSION=${PROJECT_VERSION}" \
+-e "GENERATE_STUBS=true" \
+-v "${CURRENT_DIR}/build/spring-cloud-contract/output:/spring-cloud-contract-output/" \
+springcloud/spring-cloud-contract:"${SC_CONTRACT_DOCKER_VERSION}"
+
+docker stop verifier
+kill $APP_PID
