@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 CURRENT_DIR="$( pwd )"
 
@@ -11,7 +12,13 @@ PROJECT_NAME="${PROJECT_NAME:-application}"
 PROJECT_VERSION="${PROJECT_VERSION:-0.0.1-SNAPSHOT}"
 
 # fixture setup
+docker run --rm --name rabbit -d -p 5672:5672 -p 15672:15672 rabbitmq:3.6-management-alpine
 
+echo "Waiting for 15 seconds for rabbit to boot properly"
+sleep 15
+
+python3 test_hook.py &
+HOOK_ID=$!
 gunicorn -w 4 main:app &
 APP_PID=$!
 
@@ -36,4 +43,6 @@ docker run  --rm \
 springcloud/spring-cloud-contract:"${SC_CONTRACT_DOCKER_VERSION}"
 
 docker stop verifier
+docker stop rabbit
+kill $HOOK_ID
 kill $APP_PID
