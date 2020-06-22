@@ -14,6 +14,9 @@ def hello_world():
 
 @app.route('/add-job/<cmd>')
 def add(cmd):
+    return message(cmd)
+
+def message(cmd):
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
     channel.queue_declare(queue='task_queue', durable=True)
@@ -27,3 +30,12 @@ def add(cmd):
     connection.close()
     return " [x] Sent: %s" % cmd
 
+
+# This should be ran in a profile (shouldn't be publicly available)
+@app.route('/springcloudcontract/<label>')
+def springcloudcontract(label):
+    if label == "foo":
+        return message("BLA")
+    else:
+        raise ValueError('No such label expected.') 
+    
