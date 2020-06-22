@@ -19,10 +19,10 @@ def add(cmd):
 def message(cmd):
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
-    channel.queue_declare(queue='task_queue', durable=True)
+    # channel.queue_declare(queue='output', durable=True)
     channel.basic_publish(
         exchange='',
-        routing_key='task_queue',
+        routing_key='output',
         body=cmd,
         properties=pika.BasicProperties(
             delivery_mode=2,  # make message persistent
@@ -32,10 +32,10 @@ def message(cmd):
 
 
 # This should be ran in a profile (shouldn't be publicly available)
-@app.route('/springcloudcontract/<label>')
+@app.route('/springcloudcontract/<label>', methods=['POST'])
 def springcloudcontract(label):
-    if label == "foo":
-        return message("BLA")
+    if label == "ping_pong":
+        return message("pong")
     else:
         raise ValueError('No such label expected.') 
     
