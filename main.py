@@ -21,6 +21,8 @@ def message(cmd):
     channel = connection.channel()
     # channel.queue_declare(queue='output', durable=True)
     channel.basic_publish(
+        # exchange='output',
+        # routing_key='#',
         exchange='',
         routing_key='output',
         body=cmd,
