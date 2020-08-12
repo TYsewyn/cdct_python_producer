@@ -23,8 +23,8 @@ def message(cmd):
     channel.basic_publish(
         # exchange='output',
         # routing_key='#',
-        exchange='',
-        routing_key='output',
+        exchange='output',
+        routing_key='#',
         body=cmd,
         properties=pika.BasicProperties(
             delivery_mode=2,  # make message persistent
@@ -37,7 +37,7 @@ def message(cmd):
 @app.route('/springcloudcontract/<label>', methods=['POST'])
 def springcloudcontract(label):
     if label == "ping_pong":
-        return message("pong")
+        return message('{"message":"pong"}')
     else:
         raise ValueError('No such label expected.') 
     
