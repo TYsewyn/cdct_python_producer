@@ -2,7 +2,10 @@
 
 from flask import Flask
 from flask import jsonify
+from kafka import KafkaProducer
 import pika
+import os
+import json
 
 app = Flask(__name__)
 
@@ -14,16 +17,43 @@ def hello_world():
 
 @app.route('/add-job/<cmd>')
 def add(cmd):
+    return message(cmd)
+
+def message(cmd):
+    if 'MESSAGING_TYPE' in os.environ and os.environ['MESSAGING_TYPE'] == "kafka":
+        print("Will send a kafka message")
+        return kafkaMessage(cmd)
+    else:
+        print("Will send a rabbit message")
+        return rabbitMessage(cmd)
+
+def rabbitMessage(cmd):
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
-    channel.queue_declare(queue='task_queue', durable=True)
     channel.basic_publish(
-        exchange='',
-        routing_key='task_queue',
+        exchange='output',
+        routing_key='#',
         body=cmd,
         properties=pika.BasicProperties(
             delivery_mode=2,  # make message persistent
         ))
     connection.close()
-    return " [x] Sent: %s" % cmd
+    return " [x] Sent via Rabbit: %s" % cmd
 
+def kafkaMessage(cmd):
+    server='localhost:9092'
+    if 'APP_IP' in os.environ:
+        server=os.environ['APP_IP'] + ':9092'
+    print("Bootstrap server is [" + server + "]")
+    producer = KafkaProducer(bootstrap_servers=server, value_serializer=lambda v: json.dumps(v).encode('utf-8'))
+    producer.send('output', cmd)
+    return " [x] Sent via Kafka: %s" % cmd
+
+# This should be ran in a profile (shouldn't be publicly available)
+if 'CONTRACT_TEST' in os.environ:
+    @app.route('/springcloudcontract/<label>', methods=['POST'])
+    def springcloudcontract(label):
+        if label == "ping_pong":
+            return message('{"message":"pong"}')
+        else:
+            raise ValueError('No such label expected.') 
